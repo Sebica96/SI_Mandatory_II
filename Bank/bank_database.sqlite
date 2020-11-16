@@ -1,0 +1,28 @@
+CREATE TABLE IF NOT EXISTS [Loan](
+[id] INTEGER  not null primary key,
+[BankUserId] INTEGER not null REFERENCES BankUser (id), 
+[CreatedAt] Date,
+[ModifiedAt] Date,
+[Amount] DECIMAL not null
+);
+
+CREATE TABLE IF NOT EXISTS [BankUser](
+[id] INTEGER  primary key autoincrement autoincrement,
+[UserId] INTEGER not null,
+[CreatedAt] Date,
+[ModifiedAt] Date);
+
+CREATE TABLE IF NOT EXISTS [Deposit](
+[id] INTEGER  not null primary key,
+[BankUserId] INTEGER not null REFERENCES BankUser (id),
+[CreatedAt] Date,
+[Amount] DECIMAL not null);
+
+CREATE TABLE IF NOT EXISTS [Account](
+[id] INTEGER  not null primary key,
+[BankUserId] INTEGER not null REFERENCES BankUser (id),
+[AccountNo] int unique not null,
+[IsStudent] Boolean,
+[CreatedAt] Date,
+[ModifiedAt] Date,
+[Amount] DECIMAL not null);
