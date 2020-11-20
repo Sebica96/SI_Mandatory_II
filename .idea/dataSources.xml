@@ -7,5 +7,11 @@
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/Skat/SKAT.sqlite</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="bank.sqlite" uuid="ae75e07c-3e4a-4528-a751-ccc0748af646">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/Bank/bank.sqlite</jdbc-url>
+    </data-source>
   </component>
 </project>
