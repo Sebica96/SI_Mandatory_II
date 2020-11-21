@@ -1,9 +1,13 @@
 # Imports
 import sqlite3
 import requests
+from datetime import datetime
+
 
 db = sqlite3.connect('Skat.sqlite')
 db_cursor = db.cursor()
+
+
 
 
 # MENU for main operations
@@ -25,8 +29,7 @@ def menu_switch():
     elif menu_option == 2:
         skat_Year_CRUD_menu()
     elif menu_option == 3:
-        create_SKAT_USER_YEAR()
-        # pay_taxes()
+        pay_taxes()
     else:
         menu_switch()
 
@@ -57,8 +60,6 @@ def User_CRUD_menu():
         update_skat_user()
     elif user_menu_option == 4:
         delte_skat_user()
-    elif user_menu_option == 5:
-        taxCalculator()
     else:
         menu_switch()
 
@@ -100,19 +101,22 @@ def create_new_skat_user():
         print("You are inserting new skat user ")
         print("______________________________________________________________")
         print("Date needed: id, UserId, CreatedAt and IsActive.")
-        print("CreatedAt formating: yyyy-mm-dd")
+        #print("CreatedAt formating: yyyy-mm-dd")
         print("IsActive formating: true or false")
         print("")
         Id = input("id: ")
         UserId = input("UserId: ")
-        CreatedAt = input("CreatedAt: ")
+        #CreatedAt = input("CreatedAt: ")
         IsActive = input("IsActive: ")
         print("")
 
         insert_command = '''INSERT INTO SKAT_USER VALUES(?,?,?,?)'''
 
-        db_cursor.execute(insert_command, (Id, UserId, CreatedAt, IsActive))
+        db_cursor.execute(insert_command, (Id, UserId, datetime.now(), IsActive))
         db.commit()
+
+        create_new_skat_year()
+
         return User_CRUD_menu()
     except:
         print("Error")
@@ -184,14 +188,14 @@ def create_new_skat_year():
         print("")
         Id = input("Id: ")
         label = input("label: ")
-        createdAt = input("createdAt: ")
-        modifiedAt = input("modifiedAt: ")
-        startDate = input("startDate: ")
+        #createdAt = input("createdAt: ")
+        #modifiedAt = input("modifiedAt: ")
+        #startDate = input("startDate: ")
         enddate = input("enddate: ")
         print("")
         query = '''INSERT INTO SKAT_YEAR VALUES(?,?,?,?,?,?)'''
 
-        db_cursor.execute(query, (Id, label, createdAt, modifiedAt, startDate, enddate))
+        db_cursor.execute(query, (Id, label, datetime.now(), datetime.now(), datetime.now(), enddate))
         db.commit()
         print("record inserted successfully")
         # create_SKAT_USER_YEAR()
@@ -218,17 +222,16 @@ def read_skat_year():
 
 def update_skat_year():
     print("UPDATE SKAT YEAR")
-    qry = "UPDATE SKAT_YEAR SET label=?, createdAt=?,modifiedAt=?,startDate=?,enddate=? WHERE id=?;"
+    qry = "UPDATE SKAT_YEAR SET label=?,modifiedAt=?,enddate=? WHERE id=?;"
     try:
         print("")
         print("REMEMBER")
         print("ALL DATE formating: yyyy-mm-dd")
         print("")
         label = input("label: ")
-        modifiedAt = input("modifiedAt: ")
         enddate = input("enddate: ")
         ID = input("Enter a YEAR id to change: ")
-        db_cursor.execute(qry, (label, modifiedAt, enddate, ID))
+        db_cursor.execute(qry, (label, datetime.now(), enddate, ID))
         db.commit()
         print("________________________________")
         print("record updated successfully")
@@ -236,7 +239,6 @@ def update_skat_year():
     except:
         print("error in operation")
         db.rollback()
-
 
 def delte_skat_year():
     print("DELETE SKAT YEAR")
@@ -255,72 +257,94 @@ def delte_skat_year():
         db.rollback()
         return User_CRUD_menu()
 
-
-# SKAT USER YEAR functions
-# need to be re-done
-def create_SKAT_USER_YEAR():
-    # Id = input("Id: ")
-    # UserId = input("UserId: ")
-    # IsPaid = input("IsPaid: ")
-    # Amount = input("Amount: ")
-
-    SUY_query = '''INSERT INTO SKAT_USER_YEAR(SkatUserId,SkatYearId) 
-                   SELECT SKAT_USER.UserId,SKAT_YEAR.Id FROM SKAT_USER, SKAT_YEAR;'''
-
-    db_cursor.execute(SUY_query)
-    try:
-        record = db_cursor.fetchall()
-        print(record)
-    except:
-        print("error in operation")
-        return User_CRUD_menu()
-
+# Implement a /pay-taxes endpoint (POST request):
 
 def pay_taxes():
-    return
+    qry = '''SELECT SKAT_USER_YEAR.Amount, SKAT_USER_YEAR.IsPaid, SKAT_USER.UserId FROM SKAT_USER_YEAR,SKAT_USER WHERE SKAT_USER_YEAR.Id=SKAT_USER.UserId;'''
+    db_cursor.execute(qry)
 
+    result = []
+    try:
+        #initial check
+        record = db_cursor.fetchall()
+        for i in record:
+            ispaid = i[1]
+            user = i[2]
+            amn = i[0]
+            #print(ispaid)
+            if int(ispaid) is 0:
+                #print("___________________________")
+                #print("This user has not paid yet!")
+                if amn >= 0:
+                    newAmount = tax(amn)
+                    taxAmount = updateSKATInfo(ispaid,newAmount,user)
+                    updateBankAmount(taxAmount)
+                    #result.append([user,ispaid,this])
+                elif amn < 0:
+                    pass
+                    #print("........................")
+                    #print(user)
+                    text = "Error: value is negative"
+                    #updateSKATInfo()
+                    #result.append([user,text])
 
-# Tax Calculator Function
-# Receives a post request with an amount property to
-# http://localhost:7071/api/Skat_Tax_Calculator
-# Returns the calculated amount that needs to be paid.
-# An error will be thrown if the value is negative.
+            elif int(ispaid) is 1:
+                pass
+                #print("___________________________")
+                #print("This user has paid !")
+            #   result = 1
+            #   return result
+    except:
+        print("Error in pay taxes")
+    print(result)
 
-####3# has to be changed to post request####3
-def taxCalculator():
-    amount = '''SELECT SKAT_USER_YEAR.Amount,SKAT_USER_YEAR.IsPaid,SKAT_USER_YEAR.IsPAid FROM SKAT_USER_YEAR'''
-    db_cursor.execute(amount)
+def updateBankAmount(amount):
+    newAmount = "UPDATE Account.Amount SET AMOUNT=?, ModifiedAt=? WHERE id=?;"
+    currentAmount = '''SELECT Account.Amount FROM Account;'''
+    db_cursor.execute(currentAmount)
+    array =[]
+    array_tax = []
+
     try:
         record = db_cursor.fetchall()
         for i in record:
             amn = i[0]
-            stu_paid = i[1]
-            user = i[2]
+            if amn > 0:
+                for i in amount:
+                    taxPaid = i[1]
+                    ID = i[2]
+                    restAmn = amn - taxPaid
+                    array_tax.append(restAmn)
+        db_cursor.execute(newAmount,(restAmn,datetime.now, ID))
+        db.commit()
 
-            if stu_paid is 0:
-                if int(amn) >= 0:
-                    this = tax(amn)
-                    print("............")
-                    print(user)
-                    print("Has to pay: ")
-                    print(this)
-                    print("In taxes")
-                elif int(amn) < 0:
-                    print("........................")
-                    print(user)
-                    print("Error: value is negative")
-            else:
-                print("...............")
-                print("This user paid!")
+        print("record updated successfully")
 
     except:
-        print("error in operation")
+        print("Error in updating amount")
+        db.rollback()
 
+def updateSKATInfo(ispaidVal,amountVal,idVal):
+    upd_SKAT = "UPDATE SKAT_USER_YEAR SET Amount=?, IsPaid=? WHERE id=?;"
+
+    try:
+        amount = int(amountVal)
+        if ispaidVal == 0:
+            ispaid = 1
+        ID = int(idVal)
+
+        db_cursor.execute(upd_SKAT,(amount,ispaid, ID))
+        db.commit()
+
+        print("record updated successfully")
+
+    except:
+        print("Error in updating ispaid and tax amount")
+        db.rollback()
 
 def tax(amount):
     value = (int(amount) / int(100)) * int(33)
     return value
-
 
 menu_switch()
 
