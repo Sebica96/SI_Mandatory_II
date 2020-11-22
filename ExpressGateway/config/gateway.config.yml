@@ -5,8 +5,13 @@ admin:
   host: localhost
 apiEndpoints:
   # see: http://www.express-gateway.io/docs/configuration/gateway.config.yml/apiEndpoints
+  borger:
+    host: localhost
+    path: '/borger/*'
 serviceEndpoints:
   # see: http://www.express-gateway.io/docs/configuration/gateway.config.yml/serviceEndpoints
+  borgerService:
+    url: 'http://localhost:8001'
 policies:
   - basic-auth
   - cors
@@ -18,3 +23,20 @@ policies:
   - rate-limit
 pipelines:
   # see: https://www.express-gateway.io/docs/configuration/gateway.config.yml/pipelines
+  borgerPipeline:
+    apiEndpoints:
+      - borger
+    policies:
+      - log:
+          - action:
+              message: ${req.method} ${req.originalUrl} ${res.statusCode}
+      - rewrite:
+          condition:
+            name: pathmatch
+            match: '/borger/:route*'
+          action:
+            rewrite: '/:route'
+      - proxy:
+          action:
+            serviceEndpoint: borgerService
+            changeOrigin: true
