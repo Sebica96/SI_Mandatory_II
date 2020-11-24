@@ -23,6 +23,7 @@ def insert_in_bankUser():
         print("Error")
 
 
+
 def retrieve_from_BankUser():
     retrieve_command = '''SELECT * FROM BankUser;'''
 
