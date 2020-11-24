@@ -37,9 +37,8 @@ db.run(`CREATE TABLE IF NOT EXISTS Address(
 // CREATE
 app.post("/borger", (req, res) => {
     let borgerUserId = req.body.userId;
-    let sql = `INSERT INTO BorgerUser(UserId) VALUES(?)`;
 
-    db.run(sql, [borgerUserId], (err) => {
+    db.run(`INSERT INTO BorgerUser(UserId) VALUES(?)`, [borgerUserId], (err) => {
         if (err) {
             res.status(400).json({
                 message: 'A new borger user could not be added to the table!',
@@ -99,7 +98,7 @@ app.get("/borger/:id", (req, res) => {
 //UPDATE
 app.put("/borger/:id", (req, res) => {
     console.log("req.params.id: ", req.params.id);
-    let borgerUserId = req.body.userId;
+    let borgerUserId = req.body.newUserId;
     db.all(`SELECT * FROM BorgerUser WHERE Id = ?`, [req.params.id], (err, borgerUser) => {
         if (err) {
             res.status(400).json({
@@ -179,6 +178,7 @@ app.post("/address", (req, res) => {
         // get all the existing addresses
         axios.get(`http://localhost:4000/address`).then(response => {
             let addresses = response.data.addresses;
+            console.log(addresses.length);
             //console.log(addresses);
             // check if the borger user id from the address table already exists
             // if it exists, set the isValid field false for the old addresses
